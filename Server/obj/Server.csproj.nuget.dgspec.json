@@ -34,19 +34,18 @@
           "warnAsError": [
             "NU1605"
           ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "default"
         }
       },
       "frameworks": {
         "net6.0": {
           "targetAlias": "net6.0",
           "dependencies": {
-            "Microsoft.AspNetCore.SpaProxy": {
+            "Swashbuckle.AspNetCore": {
               "target": "Package",
-              "version": "[6.0.21, )"
-            },
-            "Pomelo.EntityFrameworkCore.MySql": {
-              "target": "Package",
-              "version": "[7.0.0, )"
+              "version": "[6.5.0, )"
             }
           },
           "imports": [
