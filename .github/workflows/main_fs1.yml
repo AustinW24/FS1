@@ -44,7 +44,8 @@ jobs:
           name: net-app
 
       - name: List files in the directory
-        run: ls -l
+        run: Get-ChildItem -Path "./" -Name
+        
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
