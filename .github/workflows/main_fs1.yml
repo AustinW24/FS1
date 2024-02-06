@@ -27,8 +27,8 @@ jobs:
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
         with:
-          name: .net-app
-          path: ./publish
+          name: net-app
+          path: ./Server/bin/Debug/net6.0/publish/
 
   deploy:
     runs-on: windows-latest
@@ -41,7 +41,7 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v3
         with:
-          name: .net-app
+          name: net-app
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
@@ -49,4 +49,5 @@ jobs:
           app-name: 'fs1'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_1DA818086BFE4065AB06C6B15B75A45F }}
-          package: ./publish 
+          package: ./net-app 
+
