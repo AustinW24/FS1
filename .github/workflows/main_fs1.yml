@@ -41,7 +41,7 @@ jobs:
         with: 
           app-name: fs1 # Replace with your app name
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_1DA818086BFE4065AB06C6B15B75A45F }} # Define secret variable in repository settings as per action documentation
-          package: '${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/bin/Debug/net6.0/publish/'
+          package: './publish'
 
 
 # name: Build and deploy ASP.Net Core app to Azure Web App - fs1
