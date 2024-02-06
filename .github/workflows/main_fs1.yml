@@ -1,6 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
 name: Build and deploy ASP.Net Core app to Azure Web App - fs1
 
 on:
@@ -19,21 +16,19 @@ jobs:
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '8.x'
-          include-prerelease: true
+          dotnet-version: '6.0.x' 
 
       - name: Build with dotnet
         run: dotnet build ./Server/Server.csproj --configuration Release
 
       - name: dotnet publish
-        run: dotnet publish ./Server/Server.csproj -c Release -o ./server
-
+        run: dotnet publish ./Server/Server.csproj -c Release -o ./publish
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
         with:
           name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp
+          path: ./publish
 
   deploy:
     runs-on: windows-latest
@@ -49,10 +44,9 @@ jobs:
           name: .net-app
 
       - name: Deploy to Azure Web App
-        id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'fs1'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_1DA818086BFE4065AB06C6B15B75A45F }}
-          package: .
+          package: .net-app # This should point to the downloaded artifact
