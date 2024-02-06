@@ -6,8 +6,8 @@ on: [push]
 
 env:
   AZURE_WEBAPP_NAME: fs1    
-  AZURE_WEBAPP_PACKAGE_PATH: '.'      # set this to the path to your web app project, defaults to the repository root
-  DOTNET_VERSION: '8.0.x'           # set this to the dot net version to use
+  AZURE_WEBAPP_PACKAGE_PATH: '.'
+  DOTNET_VERSION: '8.0.x'        
 
 jobs:
   build:
@@ -28,6 +28,12 @@ jobs:
 
       - name: dotnet publish
         run: dotnet publish ./Server/Server.csproj -c Release -o ./publish
+
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v3
+        with:
+          name: net-app
+          path: ./Server/bin/Debug/net6.0/publish/
           
       # Deploy to Azure Web apps
       - name: 'Run Azure webapp deploy action using publish profile credentials'
@@ -35,7 +41,9 @@ jobs:
         with: 
           app-name: fs1 # Replace with your app name
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_1DA818086BFE4065AB06C6B15B75A45F }} # Define secret variable in repository settings as per action documentation
-          package: '${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/server'
+          package: './publish'
+
+
 # name: Build and deploy ASP.Net Core app to Azure Web App - fs1
 
 # on:
