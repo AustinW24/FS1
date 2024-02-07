@@ -1,13 +1,11 @@
-
-
 name: Build and deploy ASP.Net Core app to Azure Web App - fs1
 
 on: [push]
 
 env:
-  AZURE_WEBAPP_NAME: fs1    
-  AZURE_WEBAPP_PACKAGE_PATH: '.'
-  DOTNET_VERSION: '8.0.x'        
+  AZURE_WEBAPP_NAME: fs1
+  AZURE_WEBAPP_PACKAGE_PATH: '.'  # Path to the package to be deployed
+  DOTNET_VERSION: '8.0.x'          # .NET version
 
 jobs:
   build:
@@ -15,92 +13,86 @@ jobs:
 
     steps:
       # Checkout the repo
-      - uses: actions/checkout@main
+      - uses: actions/checkout@v2
       
       # Setup .NET Core SDK
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }} 
+          dotnet-version: ${{ env.DOTNET_VERSION }}
       
+      # Build the ASP.NET Core app
       - name: Build with dotnet
         run: dotnet build ./Server/Server.csproj --configuration Release
 
+      # Publish the ASP.NET Core app
       - name: dotnet publish
         run: dotnet publish ./Server/Server.csproj -c Release -o ./publish
 
+      # Build the Angular app
+      - name: Build Angular
+        run: |
+          cd Client
+          npm install
+          npx ng build --configuration production
+          # Define the paths
+          $angularOutputPath = 'dist/client' # Adjust this path as necessary
+          $serverWwwrootPath = '../Server/wwwroot'
+          
+          # Log the contents of the output path
+          Write-Host "Contents of Angular output path:"
+          Get-ChildItem -Path $angularOutputPath -Recurse
+      
+          # Ensure the wwwroot directory is empty
+          if (Test-Path $serverWwwrootPath) {
+              Write-Host "Clearing contents of $serverWwwrootPath"
+              Get-ChildItem -Path $serverWwwrootPath -Recurse | Remove-Item -Recurse -Force
+          }
+      
+          # Log the contents of the wwwroot directory to confirm it's empty
+          Write-Host "Contents of wwwroot after clearing:"
+          Get-ChildItem -Path $serverWwwrootPath -Recurse
+      
+          # Copy the files, ensuring you're not trying to overwrite a directory with a file
+          if (Test-Path $angularOutputPath) {
+              Write-Host "Copying files from $angularOutputPath to $serverWwwrootPath"
+              Get-ChildItem -Path $angularOutputPath -Recurse | ForEach-Object {
+                  $targetPath = Join-Path -Path $serverWwwrootPath -ChildPath $_.FullName.Substring($angularOutputPath.Length)
+                  if (Test-Path $targetPath -PathType Container) {
+                      Remove-Item -Path $targetPath -Recurse -Force
+                  }
+                  if ($_ -is [System.IO.DirectoryInfo]) {
+                      Copy-Item -Path $_.FullName -Destination $targetPath -Recurse -Force
+                  } else {
+                      Copy-Item -Path $_.FullName -Destination $targetPath -Force
+                  }
+              }
+          } else {
+              Write-Error "Angular build output path does not exist: $angularOutputPath"
+              exit 1
+          }
+    
+
+      # List Angular directory content
+      - name: List build directory contents
+        run: |
+          cd Client
+          Get-ChildItem -Path $angularOutputPath -Recurse
+
+      # Upload the published ASP.NET Core app as an artifact
       - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: net-app
-          path: ./Server/bin/Debug/net6.0/publish/
-          
+          path: ./Server/wwwroot  # Ensure this is the path to your published app including the Angular output
+      
       # Deploy to Azure Web apps
       - name: 'Run Azure webapp deploy action using publish profile credentials'
-        uses: azure/webapps-deploy@v3
+        uses: azure/webapps-deploy@v2
         with: 
-          app-name: fs1 # Replace with your app name
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_1DA818086BFE4065AB06C6B15B75A45F }} # Define secret variable in repository settings as per action documentation
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_1DA818086BFE4065AB06C6B15B75A45F }}
           package: './publish'
 
-
-# name: Build and deploy ASP.Net Core app to Azure Web App - fs1
-
-# on:
-#   push:
-#     branches:
-#       - main
-#   workflow_dispatch:
-
-# jobs:
-#   build:
-#     runs-on: windows-latest
-
-#     steps:
-#       - uses: actions/checkout@v4
-
-#       - name: Set up .NET Core
-#         uses: actions/setup-dotnet@v1
-#         with:
-#           dotnet-version: '8.0.x' 
-
-#       - name: Build with dotnet
-#         run: dotnet build ./Server/Server.csproj --configuration Release
-
-#       - name: dotnet publish
-#         run: dotnet publish ./Server/Server.csproj -c Release -o ./publish
-
-#       - name: Upload artifact for deployment job
-#         uses: actions/upload-artifact@v3
-#         with:
-#           name: net-app
-#           path: ./Server/bin/Debug/net6.0/publish/
-
-#   deploy:
-#     runs-on: windows-latest
-#     needs: build
-#     environment:
-#       name: 'Production'
-#       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-
-#     steps:
-#       - name: Download artifact from build job
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: net-app
-
-#       - name: List files in the directory
-#         run: Get-ChildItem -Path "./" -Name
-        
-
-#       - name: Deploy to Azure Web App
-#         uses: azure/webapps-deploy@v2
-#         with:
-#           app-name: 'fs1'
-#           slot-name: 'Production'
-          # publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_1DA818086BFE4065AB06C6B15B75A45F }}
-#           package: net-app
-
-          
 
 
