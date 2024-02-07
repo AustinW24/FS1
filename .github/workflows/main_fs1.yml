@@ -35,13 +35,15 @@ jobs:
           cd Client
           npm install
           npx ng build --configuration production
-          # Update 'client' with the actual name of your Angular app if different
-          $angularOutputPath = 'dist/client' # This path should be relative to the Client directory
+          $angularOutputPath = 'dist/client' # Make sure this matches your actual output path
           $serverWwwrootPath = '../Server/wwwroot'
-          # Ensure the Angular output path exists before copying
+          # Clear the wwwroot directory before copying new files
+          if (Test-Path $serverWwwrootPath) {
+              Remove-Item "$serverWwwrootPath/*" -Recurse -Force
+          }
+          # Copy the new Angular build files
           if (Test-Path $angularOutputPath) {
-              # Now copy the files from the Angular output to the server's wwwroot directory
-              Copy-Item -Path $angularOutputPath/* -Destination $serverWwwrootPath -Recurse -Force
+              Copy-Item -Path "$angularOutputPath/*" -Destination $serverWwwrootPath -Recurse -Force
           } else {
               Write-Error "Angular build output path does not exist: $angularOutputPath"
               exit 1
