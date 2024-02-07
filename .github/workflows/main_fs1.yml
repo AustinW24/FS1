@@ -34,10 +34,11 @@ jobs:
         run: |
           cd Client
           npm install
-          ng build --prod
-          # Assuming the Angular build output is in 'dist' directory
+          npx ng build --prod
+          # Assuming the Angular build output is in 'Client/dist' directory
           # Copy it to the publish directory of the Server app
           Copy-Item -Path dist/* -Destination ../Server/wwwroot -Recurse -Force
+    
 
       # Upload the published ASP.NET Core app as an artifact
       - name: Upload artifact for deployment job
