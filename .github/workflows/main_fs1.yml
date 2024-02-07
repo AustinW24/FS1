@@ -35,8 +35,8 @@ jobs:
           cd Client
           npm install
           npx ng build --configuration production
-          # Replace 'ClientApp' with the actual name of your Angular app if different
-          $angularOutputPath = 'dist/ClientApp' # This path should be relative to the Client directory
+          # Update 'client' with the actual name of your Angular app if different
+          $angularOutputPath = 'dist/client' # This path should be relative to the Client directory
           $serverWwwrootPath = '../Server/wwwroot'
           # Ensure the Angular output path exists before copying
           if (Test-Path $angularOutputPath) {
@@ -47,7 +47,12 @@ jobs:
               exit 1
           }
 
-        
+          - name: List build directory contents
+
+      - name: List build directory contents
+        run: |
+          cd Client
+          Get-ChildItem -Path $angularOutputPath -Recurse
 
       # Upload the published ASP.NET Core app as an artifact
       - name: Upload artifact for deployment job
