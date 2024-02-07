@@ -8,8 +8,8 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: fs1
-  AZURE_WEBAPP_PACKAGE_PATH: '.'  
-  DOTNET_VERSION: '8.0.x'    
+  AZURE_WEBAPP_PACKAGE_PATH: '.'
+  DOTNET_VERSION: '8.0.x'
 
 jobs:
   build:
@@ -18,13 +18,13 @@ jobs:
     steps:
       # Checkout the repo
       - uses: actions/checkout@v2
-      
+
       # Setup .NET Core SDK
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      
+
       # Build the ASP.NET Core app
       - name: Build with dotnet
         run: dotnet build ./Server/Server.csproj --configuration Release
@@ -39,64 +39,32 @@ jobs:
           cd Client
           npm install
           npx ng build --configuration production
-          # Define the paths
-          $angularOutputPath = 'dist/client'
-          $serverWwwrootPath = '../Server/wwwroot'
-          
-          # Log the contents of the output path
-          Write-Host "Contents of Angular output path:"
-          Get-ChildItem -Path $angularOutputPath -Recurse
-      
-          # Ensure the wwwroot directory is empty
-          if (Test-Path $serverWwwrootPath) {
-              Write-Host "Clearing contents of $serverWwwrootPath"
-              Get-ChildItem -Path $serverWwwrootPath -Recurse | Remove-Item -Recurse -Force
-          }
-      
-          # Log the contents of the wwwroot directory to confirm it's empty
-          Write-Host "Contents of wwwroot after clearing:"
-          Get-ChildItem -Path $serverWwwrootPath -Recurse
-      
-          # Copy the files, ensuring you're not trying to overwrite a directory with a file
-          if (Test-Path $angularOutputPath) {
-              Write-Host "Copying files from $angularOutputPath to $serverWwwrootPath"
-              Get-ChildItem -Path $angularOutputPath -Recurse | ForEach-Object {
-                  $targetPath = Join-Path -Path $serverWwwrootPath -ChildPath $_.FullName.Substring($angularOutputPath.Length)
-                  if (Test-Path $targetPath -PathType Container) {
-                      Remove-Item -Path $targetPath -Recurse -Force
-                  }
-                  if ($_ -is [System.IO.DirectoryInfo]) {
-                      Copy-Item -Path $_.FullName -Destination $targetPath -Recurse -Force
-                  } else {
-                      Copy-Item -Path $_.FullName -Destination $targetPath -Force
-                  }
-              }
-          } else {
-              Write-Error "Angular build output path does not exist: $angularOutputPath"
-              exit 1
-          }
-    
+        shell: pwsh
 
-      # List Angular directory content
-      - name: List build directory contents
+      # Copy Angular build output to ASP.NET Core wwwroot
+      - name: Copy Angular output to wwwroot
         run: |
-          cd Client
-          Get-ChildItem -Path $angularOutputPath -Recurse
+          $angularOutputPath = 'Client/dist/client'
+          $serverWwwrootPath = 'Server/wwwroot'
+          New-Item -ItemType Directory -Force -Path $serverWwwrootPath
+          Copy-Item -Path $angularOutputPath/* -Destination $serverWwwrootPath -Recurse -Force
+        shell: pwsh
 
       # Upload the published ASP.NET Core app as an artifact
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v2
         with:
           name: net-app
-          path: ./Server/wwwroot 
-      
+          path: ./Server/wwwroot
+
       # Deploy to Azure Web apps
       - name: 'Run Azure webapp deploy action using publish profile credentials'
         uses: azure/webapps-deploy@v2
-        with: 
+        with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_1DA818086BFE4065AB06C6B15B75A45F }}
-          package: './publish'
+          package: './Server/wwwroot'
+
 
 
 
