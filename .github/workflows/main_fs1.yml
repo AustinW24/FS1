@@ -1,11 +1,15 @@
 name: Build and deploy ASP.Net Core app to Azure Web App - fs1
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 env:
   AZURE_WEBAPP_NAME: fs1
-  AZURE_WEBAPP_PACKAGE_PATH: '.'  # Path to the package to be deployed
-  DOTNET_VERSION: '8.0.x'          # .NET version
+  AZURE_WEBAPP_PACKAGE_PATH: '.'  
+  DOTNET_VERSION: '8.0.x'    
 
 jobs:
   build:
@@ -36,7 +40,7 @@ jobs:
           npm install
           npx ng build --configuration production
           # Define the paths
-          $angularOutputPath = 'dist/client' # Adjust this path as necessary
+          $angularOutputPath = 'dist/client'
           $serverWwwrootPath = '../Server/wwwroot'
           
           # Log the contents of the output path
@@ -84,7 +88,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: net-app
-          path: ./Server/wwwroot  # Ensure this is the path to your published app including the Angular output
+          path: ./Server/wwwroot 
       
       # Deploy to Azure Web apps
       - name: 'Run Azure webapp deploy action using publish profile credentials'
@@ -94,5 +98,66 @@ jobs:
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_1DA818086BFE4065AB06C6B15B75A45F }}
           package: './publish'
 
+
+
+
+# name: Build and deploy ASP.Net Core app to Azure Web App - fs1
+
+# on:
+#   push:
+#     branches:
+#       - main
+#   workflow_dispatch:
+
+# jobs:
+#   build:
+#     runs-on: windows-latest
+
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Set up .NET Core
+#         uses: actions/setup-dotnet@v1
+#         with:
+#           dotnet-version: '8.0.x' 
+
+#       - name: Build with dotnet
+#         run: dotnet build ./Server/Server.csproj --configuration Release
+
+#       - name: dotnet publish
+#         run: dotnet publish ./Server/Server.csproj -c Release -o ./publish
+
+#       - name: Upload artifact for deployment job
+#         uses: actions/upload-artifact@v3
+#         with:
+#           name: net-app
+#           path: ./Server/bin/Debug/net6.0/publish/
+
+#   deploy:
+#     runs-on: windows-latest
+#     needs: build
+#     environment:
+#       name: 'Production'
+#       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
+#     steps:
+#       - name: Download artifact from build job
+#         uses: actions/download-artifact@v3
+#         with:
+#           name: net-app
+
+#       - name: List files in the directory
+#         run: Get-ChildItem -Path "./" -Name
+        
+
+#       - name: Deploy to Azure Web App
+#         uses: azure/webapps-deploy@v2
+#         with:
+#           app-name: 'fs1'
+#           slot-name: 'Production'
+          # publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_1DA818086BFE4065AB06C6B15B75A45F }}
+#           package: net-app
+
+          
 
 
