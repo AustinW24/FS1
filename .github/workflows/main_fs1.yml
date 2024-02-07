@@ -34,11 +34,20 @@ jobs:
         run: |
           cd Client
           npm install
-          npx ng build --prod
-          # Assuming the Angular build output is in 'Client/dist' directory
-          # Copy it to the publish directory of the Server app
-          Copy-Item -Path dist/* -Destination ../Server/wwwroot -Recurse -Force
-    
+          npx ng build --configuration production
+          # Replace 'ClientApp' with the actual name of your Angular app if different
+          $angularOutputPath = 'dist/ClientApp' # This path should be relative to the Client directory
+          $serverWwwrootPath = '../Server/wwwroot'
+          # Ensure the Angular output path exists before copying
+          if (Test-Path $angularOutputPath) {
+              # Now copy the files from the Angular output to the server's wwwroot directory
+              Copy-Item -Path $angularOutputPath/* -Destination $serverWwwrootPath -Recurse -Force
+          } else {
+              Write-Error "Angular build output path does not exist: $angularOutputPath"
+              exit 1
+          }
+
+        
 
       # Upload the published ASP.NET Core app as an artifact
       - name: Upload artifact for deployment job
