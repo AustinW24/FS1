@@ -35,19 +35,43 @@ jobs:
           cd Client
           npm install
           npx ng build --configuration production
-          $angularOutputPath = 'dist/client' # Make sure this matches your actual output path
+          # Define the paths
+          $angularOutputPath = 'dist/client' # Adjust this path as necessary
           $serverWwwrootPath = '../Server/wwwroot'
-          # Clear the wwwroot directory before copying new files
+          
+          # Log the contents of the output path
+          Write-Host "Contents of Angular output path:"
+          Get-ChildItem -Path $angularOutputPath -Recurse
+      
+          # Ensure the wwwroot directory is empty
           if (Test-Path $serverWwwrootPath) {
-              Remove-Item "$serverWwwrootPath/*" -Recurse -Force
+              Write-Host "Clearing contents of $serverWwwrootPath"
+              Get-ChildItem -Path $serverWwwrootPath -Recurse | Remove-Item -Recurse -Force
           }
-          # Copy the new Angular build files
+      
+          # Log the contents of the wwwroot directory to confirm it's empty
+          Write-Host "Contents of wwwroot after clearing:"
+          Get-ChildItem -Path $serverWwwrootPath -Recurse
+      
+          # Copy the files, ensuring you're not trying to overwrite a directory with a file
           if (Test-Path $angularOutputPath) {
-              Copy-Item -Path "$angularOutputPath/*" -Destination $serverWwwrootPath -Recurse -Force
+              Write-Host "Copying files from $angularOutputPath to $serverWwwrootPath"
+              Get-ChildItem -Path $angularOutputPath -Recurse | ForEach-Object {
+                  $targetPath = Join-Path -Path $serverWwwrootPath -ChildPath $_.FullName.Substring($angularOutputPath.Length)
+                  if (Test-Path $targetPath -PathType Container) {
+                      Remove-Item -Path $targetPath -Recurse -Force
+                  }
+                  if ($_ -is [System.IO.DirectoryInfo]) {
+                      Copy-Item -Path $_.FullName -Destination $targetPath -Recurse -Force
+                  } else {
+                      Copy-Item -Path $_.FullName -Destination $targetPath -Force
+                  }
+              }
           } else {
               Write-Error "Angular build output path does not exist: $angularOutputPath"
               exit 1
           }
+    
 
       # List Angular directory content
       - name: List build directory contents
@@ -70,65 +94,5 @@ jobs:
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_1DA818086BFE4065AB06C6B15B75A45F }}
           package: './publish'
 
-
-
-# name: Build and deploy ASP.Net Core app to Azure Web App - fs1
-
-# on:
-#   push:
-#     branches:
-#       - main
-#   workflow_dispatch:
-
-# jobs:
-#   build:
-#     runs-on: windows-latest
-
-#     steps:
-#       - uses: actions/checkout@v4
-
-#       - name: Set up .NET Core
-#         uses: actions/setup-dotnet@v1
-#         with:
-#           dotnet-version: '8.0.x' 
-
-#       - name: Build with dotnet
-#         run: dotnet build ./Server/Server.csproj --configuration Release
-
-#       - name: dotnet publish
-#         run: dotnet publish ./Server/Server.csproj -c Release -o ./publish
-
-#       - name: Upload artifact for deployment job
-#         uses: actions/upload-artifact@v3
-#         with:
-#           name: net-app
-#           path: ./Server/bin/Debug/net6.0/publish/
-
-#   deploy:
-#     runs-on: windows-latest
-#     needs: build
-#     environment:
-#       name: 'Production'
-#       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-
-#     steps:
-#       - name: Download artifact from build job
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: net-app
-
-#       - name: List files in the directory
-#         run: Get-ChildItem -Path "./" -Name
-        
-
-#       - name: Deploy to Azure Web App
-#         uses: azure/webapps-deploy@v2
-#         with:
-#           app-name: 'fs1'
-#           slot-name: 'Production'
-          # publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_1DA818086BFE4065AB06C6B15B75A45F }}
-#           package: net-app
-
-          
 
 
