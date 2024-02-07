@@ -47,8 +47,7 @@ jobs:
               exit 1
           }
 
-          - name: List build directory contents
-
+      # List Angular directory content
       - name: List build directory contents
         run: |
           cd Client
